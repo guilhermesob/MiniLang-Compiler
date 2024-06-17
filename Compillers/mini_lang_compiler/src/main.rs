@@ -5,6 +5,8 @@ enum Token {
     Minus,
     Multiply,
     Divide,
+    LeftParenthesis,
+    RightParenthesis,
 }
 
 fn tokenize(input: &str) -> Vec<Token> {
@@ -41,8 +43,21 @@ fn tokenize(input: &str) -> Vec<Token> {
                 tokens.push(Token::Divide);
                 chars.next();
             }
+            '(' => {
+                tokens.push(Token::LeftParenthesis);
+                chars.next();
+            }
+            ')' => {
+                tokens.push(Token::RightParenthesis);
+                chars.next();
+            }
+            ' ' => {
+                // Ignorar espaços em branco
+                chars.next();
+            }
             _ => {
-                chars.next(); // Ignore unknown characters (you might want to handle errors instead)
+                // Ignorar caracteres desconhecidos
+                chars.next();
             }
         }
     }
@@ -51,7 +66,7 @@ fn tokenize(input: &str) -> Vec<Token> {
 }
 
 fn main() {
-    let input = "3+5*7";
+    let input = "3 + (5 * 7) - 2 / (1 + 1)";
     let tokens = tokenize(input);
     println!("{:?}", tokens);
 }
