@@ -135,6 +135,7 @@ mod tests {
         let expected = vec![
             Token::Number(3),
             Token::Plus,
+            Token::Multiply,
             Token::Number(7),
         ];
         assert_eq!(tokenize(input), expected);
