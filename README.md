@@ -50,8 +50,14 @@ Para compilar e executar o compilador MiniLang, siga estas etapas:
     ```bash
     ./target/debug/minilang_compiler
 
+6. **Execução dos Testes:**
 
-6.**Substitua minilang_compiler pelo nome real do binário gerado.**
+    Para executar os testes, use o comando:
+    
+    ```bash
+    cargo test
+
+7. **Substitua minilang_compiler pelo nome real do binário gerado.**
 
 ## Contribuições
 
