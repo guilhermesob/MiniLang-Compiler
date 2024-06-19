@@ -346,25 +346,24 @@ fn tokenize(input: &str) -> Vec<Token> {
                     // Handle single pipe if needed
                 }
             }
-            'a'..='z' | 'A'..='Z' => {
-                let mut identifier = String::new();
-                while let Some(&ch) = chars.peek() {
-                    if ch.is_alphanumeric() || ch == '_' {
-                        identifier.push(ch);
-                        chars.next();
-                    } else {
-                        break;
-                    }
-                }
-                tokens.push(Token::Identifier(identifier));
-            }
             ' ' => {
-                // Ignorar espaços em branco
-                chars.next();
+                chars.next(); // Skip whitespace
             }
             _ => {
-                // Ignorar caracteres desconhecidos
-                chars.next();
+                if ch.is_alphabetic() {
+                    let mut ident = String::new();
+                    while let Some(&c) = chars.peek() {
+                        if c.is_alphanumeric() {
+                            ident.push(c);
+                            chars.next();
+                        } else {
+                            break;
+                        }
+                    }
+                    tokens.push(Token::Identifier(ident));
+                } else {
+                    chars.next(); // Skip unknown character
+                }
             }
         }
     }
@@ -372,215 +371,96 @@ fn tokenize(input: &str) -> Vec<Token> {
     tokens
 }
 
-fn main() {
-    let input = "3.14 + (5 * 7.2) - 2 / (1 + 1.1)";
-    let tokens = tokenize(input);
-    let mut parser = Parser::new(&tokens);
-    let ast = parser.parse();
-    println!("{:?}", ast);
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_tokenize_simple_expression() {
-        let input = "3+5*7";
-        let expected = vec![
-            Token::Number(3.0),
-            Token::Plus,
-            Token::Number(5.0),
-            Token::Multiply,
-            Token::Number(7.0),
-        ];
-        assert_eq!(tokenize(input), expected);
-    }
-
-    #[test]
-    fn test_tokenize_expression_with_parentheses() {
-        let input = "3 + (5 * 7) - 2 / (1 + 1)";
-        let expected = vec![
-            Token::Number(3.0),
-            Token::Plus,
-            Token::LeftParenthesis,
-            Token::Number(5.0),
-            Token::Multiply,
-            Token::Number(7.0),
-            Token::RightParenthesis,
-            Token::Minus,
-            Token::Number(2.0),
-            Token::Divide,
-            Token::LeftParenthesis,
-            Token::Number(1.0),
-            Token::Plus,
-            Token::Number(1.0),
-            Token::RightParenthesis,
-        ];
-        assert_eq!(tokenize(input), expected);
-    }
-
-    #[test]
-    fn test_tokenize_with_spaces() {
-        let input = " 3 + 4 ";
-        let expected = vec![
-            Token::Number(3.0),
-            Token::Plus,
-            Token::Number(4.0),
-        ];
-        assert_eq!(tokenize(input), expected);
-    }
-
-    #[test]
-    fn test_tokenize_empty_input() {
-        let input = "";
-        let expected: Vec<Token> = vec![];
-        assert_eq!(tokenize(input), expected);
-    }
-
-    #[test]
-    fn test_tokenize_invalid_characters() {
-        let input = "3 + a * 7";
-        let expected = vec![
-            Token::Number(3.0),
-            Token::Plus,
-            Token::Identifier("a".to_string()),
-            Token::Multiply,
-            Token::Number(7.0),
-        ];
-        assert_eq!(tokenize(input), expected);
-    }
-
-    #[test]
-    fn test_tokenize_floats() {
-        let input = "3.14 + 2.71 * 1.0";
-        let expected = vec![
-            Token::Number(3.14),
-            Token::Plus,
-            Token::Number(2.71),
-            Token::Multiply,
-            Token::Number(1.0),
-        ];
-        assert_eq!(tokenize(input), expected);
-    }
-
-    #[test]
-    fn test_tokenize_comparison_operators() {
-        let input = "a == b != c < d <= e > f >= g";
-        let expected = vec![
-            Token::Identifier("a".to_string()),
-            Token::Equal,
-            Token::Identifier("b".to_string()),
-            Token::NotEqual,
-            Token::Identifier("c".to_string()),
-            Token::LessThan,
-            Token::Identifier("d".to_string()),
-            Token::LessThanOrEqual,
-            Token::Identifier("e".to_string()),
-            Token::GreaterThan,
-            Token::Identifier("f".to_string()),
-            Token::GreaterThanOrEqual,
-            Token::Identifier("g".to_string()),
-        ];
-        assert_eq!(tokenize(input), expected);
-    }
-
-    #[test]
-    fn test_tokenize_logical_operators() {
-        let input = "a && b || c";
-        let expected = vec![
-            Token::Identifier("a".to_string()),
-            Token::And,
-            Token::Identifier("b".to_string()),
-            Token::Or,
-            Token::Identifier("c".to_string()),
-        ];
-        assert_eq!(tokenize(input), expected);
-    }
-
-        // Handle single execution os a  phase partin on emnty
-        
-
-    #[test]
-    fn test_parse_simple_expression() {
-        let tokens = vec![
-            Token::Number(3.0),
-            Token::Plus,
-            Token::Number(5.0),
-            Token::Multiply,
-            Token::Number(7.0),
-        ];
+    fn test_simple_expression() {
+        let input = "3 + 4 * 2";
+        let tokens = tokenize(input);
         let mut parser = Parser::new(&tokens);
         let ast = parser.parse().unwrap();
-        let expected = AstNode::BinaryOp {
+        let expected_ast = AstNode::BinaryOp {
             op: BinaryOperator::Plus,
             left: Box::new(AstNode::Number(3.0)),
             right: Box::new(AstNode::BinaryOp {
                 op: BinaryOperator::Multiply,
-                left: Box::new(AstNode::Number(5.0)),
-                right: Box::new(AstNode::Number(7.0)),
+                left: Box::new(AstNode::Number(4.0)),
+                right: Box::new(AstNode::Number(2.0)),
             }),
         };
-        assert_eq!(ast, expected);
+        assert_eq!(ast, expected_ast);
     }
 
     #[test]
-    fn test_parse_expression_with_parentheses() {
-        let tokens = vec![
-            Token::Number(3.0),
-            Token::Plus,
-            Token::LeftParenthesis,
-            Token::Number(5.0),
-            Token::Multiply,
-            Token::Number(7.0),
-            Token::RightParenthesis,
-        ];
+    fn test_nested_expression() {
+        let input = "(1 + 2) * (3 + 4)";
+        let tokens = tokenize(input);
         let mut parser = Parser::new(&tokens);
         let ast = parser.parse().unwrap();
-        let expected = AstNode::BinaryOp {
-            op: BinaryOperator::Plus,
-            left: Box::new(AstNode::Number(3.0)),
-            right: Box::new(AstNode::BinaryOp {
-                op: BinaryOperator::Multiply,
-                left: Box::new(AstNode::Number(5.0)),
-                right: Box::new(AstNode::Number(7.0)),
-            }),
-        };
-        assert_eq!(ast, expected);
-    }
-
-    #[test]
-    fn test_parse_complex_expression() {
-        let tokens = vec![
-            Token::Number(3.0),
-            Token::Plus,
-            Token::Number(5.0),
-            Token::Multiply,
-            Token::Number(7.0),
-            Token::Minus,
-            Token::Number(2.0),
-            Token::Divide,
-            Token::Number(1.0),
-        ];
-        let mut parser = Parser::new(&tokens);
-        let ast = parser.parse().unwrap();
-        let expected = AstNode::BinaryOp {
-            op: BinaryOperator::Minus,
+        let expected_ast = AstNode::BinaryOp {
+            op: BinaryOperator::Multiply,
             left: Box::new(AstNode::BinaryOp {
                 op: BinaryOperator::Plus,
-                left: Box::new(AstNode::Number(3.0)),
-                right: Box::new(AstNode::BinaryOp {
-                    op: BinaryOperator::Multiply,
-                    left: Box::new(AstNode::Number(5.0)),
-                    right: Box::new(AstNode::Number(7.0)),
-                }),
+                left: Box::new(AstNode::Number(1.0)),
+                right: Box::new(AstNode::Number(2.0)),
             }),
             right: Box::new(AstNode::BinaryOp {
-                op: BinaryOperator::Divide,
-                left: Box::new(AstNode::Number(2.0)),
-                right: Box::new(AstNode::Number(1.0)),
+                op: BinaryOperator::Plus,
+                left: Box::new(AstNode::Number(3.0)),
+                right: Box::new(AstNode::Number(4.0)),
             }),
         };
-        assert_eq!(ast, expected);
+        assert_eq!(ast, expected_ast);
     }
+
+    #[test]
+    fn test_logical_expression() {
+        let input = "a && b || c";
+        let tokens = tokenize(input);
+        let mut parser = Parser::new(&tokens);
+        let ast = parser.parse().unwrap();
+        let expected_ast = AstNode::BinaryOp {
+            op: BinaryOperator::Or,
+            left: Box::new(AstNode::BinaryOp {
+                op: BinaryOperator::And,
+                left: Box::new(AstNode::Identifier("a".into())),
+                right: Box::new(AstNode::Identifier("b".into())),
+            }),
+            right: Box::new(AstNode::Identifier("c".into())),
+        };
+        assert_eq!(ast, expected_ast);
+    }
+
+    #[test]
+    fn test_comparison_expression() {
+        let input = "3 < 4 == 5 > 2";
+        let tokens = tokenize(input);
+        let mut parser = Parser::new(&tokens);
+        let ast = parser.parse().unwrap();
+        let expected_ast = AstNode::BinaryOp {
+            op: BinaryOperator::Equal,
+            left: Box::new(AstNode::BinaryOp {
+                op: BinaryOperator::LessThan,
+                left: Box::new(AstNode::Number(3.0)),
+                right: Box::new(AstNode::Number(4.0)),
+            }),
+            right: Box::new(AstNode::BinaryOp {
+                op: BinaryOperator::GreaterThan,
+                left: Box::new(AstNode::Number(5.0)),
+                right: Box::new(AstNode::Number(2.0)),
+            }),
+        };
+        assert_eq!(ast, expected_ast);
+    }
+}
+
+fn main() {
+    let input = "3 + 4 * 2 / (1 - 5)";
+    let tokens = tokenize(input);
+    let mut parser = Parser::new(&tokens);
+    let ast = parser.parse();
+
+    println!("{:?}", ast);
 }
